@@ -161,12 +161,14 @@ Q4.testing &lt;- read.csv(&quot;pml-testing.csv&quot;, na.strings = c('', 'NA', 
 <p>Then, I wanted to remove the NA columns, and focus on columns with higher variance:</p>
 <pre class="r"><code>Q4.training_NoNACols &lt;- Q4.training[, colSums(is.na(Q4.training)) != nrow(Q4.training)]
 Q4.NewTraining &lt;- select(Q4.training_NoNACols, matches(&quot;classe|.+_(roll|pitch|yaw)_.+&quot;), -amplitude_yaw_forearm, -amplitude_yaw_dumbbell, -amplitude_yaw_belt, -nearZeroVar(Q4.training_NoNACols)) 
+
+#cross-validation variable
 inTrain = createDataPartition(y = Q4.NewTraining$classe, p = 0.8, list = FALSE)
 Q4.NewTesting &lt;-  Q4.NewTraining[-inTrain, ]</code></pre>
 </div>
 <div id="creating-the-model" class="section level2">
 <h2>Creating the model</h2>
-<p>I created a random forest model:</p>
+<p>I created a random forest model, training it on the subset of the data:</p>
 <pre><code>## randomForest 4.6-12</code></pre>
 <pre><code>## Type rfNews() to see new features/changes/bug fixes.</code></pre>
 <pre><code>## 
@@ -195,9 +197,11 @@ Q4.NewTesting &lt;-  Q4.NewTraining[-inTrain, ]</code></pre>
 ## 
 ## Accuracy was used to select the optimal model using  the largest value.
 ## The final value used for the model was mtry = 27.</code></pre>
-<p>Unfortunately, at this time I ran into two problems in R that I couldn’t find a solution for. :(</p>
-<p>First, I was unable to use the testing data to validate the model (hence splitting it manually from the training data up above).</p>
-<p>Secondly, the confusion matrix can’t be generated, as the number of predictions is always much smaller than the number of values passed into the prediction algorithm. This causes the confusion matrix to fail.</p>
+</div>
+<div id="cross-validation" class="section level2">
+<h2>Cross Validation</h2>
+<p>I was unable to use the provided testing data set to validate the model. Thus I employed the Holdout cross-validation method above (using the intrain variable above.</p>
+<p>Unfortunately, I was out of town most of this last week and ran out of time trying to solve this final problem… The confusion matrix can’t be generated, as the number of predictions is always much smaller than the number of values passed into the prediction algorithm (3,923 test variables, vs. 41 predicted variables). This causes the confusion matrix to fail, so I can’t provide raw cross-validation numbers. :(</p>
 <pre class="r"><code>Q4.rf_Predict &lt;- predict(Q4.rf, newdata=Q4.NewTesting)
 
 #Q4.rf_Confusion &lt;- confusionMatrix(Q4.NewTesting$classe, Q4.rf_Predict)

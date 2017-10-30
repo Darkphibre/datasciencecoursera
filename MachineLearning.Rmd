@@ -36,6 +36,8 @@ Then, I wanted to remove the NA columns, and focus on columns with higher varian
 ```{r}
 Q4.training_NoNACols <- Q4.training[, colSums(is.na(Q4.training)) != nrow(Q4.training)]
 Q4.NewTraining <- select(Q4.training_NoNACols, matches("classe|.+_(roll|pitch|yaw)_.+"), -amplitude_yaw_forearm, -amplitude_yaw_dumbbell, -amplitude_yaw_belt, -nearZeroVar(Q4.training_NoNACols)) 
+
+#cross-validation variable
 inTrain = createDataPartition(y = Q4.NewTraining$classe, p = 0.8, list = FALSE)
 Q4.NewTesting <-  Q4.NewTraining[-inTrain, ]
 
@@ -44,8 +46,7 @@ Q4.NewTesting <-  Q4.NewTraining[-inTrain, ]
 
 ## Creating the model
 
-I created a random forest model:
-
+I created a random forest model, training it on the subset of the data:
 ```{r pressure, echo=FALSE}
 set.seed(42)
 Q4.rf <- train(classe ~ . , method="rf", data=Q4.NewTraining, na.action=na.omit)
@@ -53,11 +54,12 @@ Q4.rf <- train(classe ~ . , method="rf", data=Q4.NewTraining, na.action=na.omit)
 print(Q4.rf)
 ```
 
-Unfortunately, at this time I ran into two problems in R that I couldn't find a solution for. :(
 
-First, I was unable to use the testing data to validate the model (hence splitting it manually from the training data up above). 
+## Cross Validation
 
-Secondly, the confusion matrix can't be generated, as the number of predictions is always much smaller than the number of values passed into the prediction algorithm. This causes the confusion matrix to fail.
+I was unable to use the provided testing data set to validate the model. Thus I employed the Holdout cross-validation method above (using the intrain variable above. 
+
+Unfortunately, I was out of town most of this last week and ran out of time trying to solve this final problem... The confusion matrix can't be generated, as the number of predictions is always much smaller than the number of values passed into the prediction algorithm (3,923 test variables, vs. 41 predicted variables). This causes the confusion matrix to fail, so I can't provide raw cross-validation numbers. :(
 
 ```{r arg}
 Q4.rf_Predict <- predict(Q4.rf, newdata=Q4.NewTesting)
