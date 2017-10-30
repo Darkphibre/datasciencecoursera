@@ -1,0 +1,66 @@
+---
+title: "Prediction in R"
+author: "Tom Mathews"
+date: "October 29, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+## R Markdown
+My initial thought was that I would leverage the temporal nature of the sensors to identify cycles of movement. 
+However, upon review of the test set, it became clear that the desired models would need to support sampling the sensors
+(rather than modeling continuous movement).
+
+## Cleaning Data
+The data had a lot of gaps in it that requried cleaning:
+```{r cars}
+library(caret)
+library(lubridate)
+library(dplyr)
+
+setwd("C:\\Users\\Tom\\Downloads\\Coursera\\Practical Machine Learning\\")
+
+#read the files
+Q4.training <- read.csv("pml-training.csv", na.strings = c('', 'NA', '#DIV/0!'))
+Q4.testing <- read.csv("pml-testing.csv", na.strings = c('', 'NA', '#DIV/0!'))
+
+summary(Q4.training)
+
+```
+
+Then, I wanted to remove the NA columns, and focus on columns with higher variance:
+```{r}
+Q4.training_NoNACols <- Q4.training[, colSums(is.na(Q4.training)) != nrow(Q4.training)]
+Q4.NewTraining <- select(Q4.training_NoNACols, matches("classe|.+_(roll|pitch|yaw)_.+"), -amplitude_yaw_forearm, -amplitude_yaw_dumbbell, -amplitude_yaw_belt, -nearZeroVar(Q4.training_NoNACols)) 
+inTrain = createDataPartition(y = Q4.NewTraining$classe, p = 0.8, list = FALSE)
+Q4.NewTesting <-  Q4.NewTraining[-inTrain, ]
+
+```
+
+
+## Creating the model
+
+Then I created a random forest model:
+
+```{r pressure, echo=FALSE}
+set.seed(42)
+Q4.rf <- train(classe ~ . , method="rf", data=Q4.NewTraining, na.action=na.omit)
+
+print(Q4.rf)
+```
+
+Unfortunately, at this time I ran into two problems in R that I couldn't find a solution for. :(
+
+First, I was unable to use the testing data (hence splitting it manually from the training data). Secondly, the confusion matrix can't be generated, as the number of predictions is always much smaller than the number of values passed into the prediction algorithm. This causes the confusion matrix to fail.
+
+```{r arg}
+Q4.rf_Predict <- predict(Q4.rf, newdata=Q4.NewTesting)
+
+#Q4.rf_Confusion <- confusionMatrix(Q4.NewTesting$classe, Q4.rf_Predict)
+
+#print(Q4.rf_Confusion)
+```
